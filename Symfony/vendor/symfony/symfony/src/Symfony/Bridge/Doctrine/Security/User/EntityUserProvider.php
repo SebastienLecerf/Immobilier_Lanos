@@ -69,7 +69,7 @@ class EntityUserProvider implements UserProviderInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function refreshUser(UserInterface $user)
     {
@@ -87,7 +87,7 @@ class EntityUserProvider implements UserProviderInterface
             if (!$id = $this->metadata->getIdentifierValues($user)) {
                 throw new \InvalidArgumentException("You cannot refresh a user ".
                     "from the EntityUserProvider that does not contain an identifier. ".
-                    "The user object has to be serialized with its own identifier " .
+                    "The user object has to be serialized with its own identifier ".
                     "mapped by Doctrine."
                 );
             }
@@ -102,7 +102,7 @@ class EntityUserProvider implements UserProviderInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function supportsClass($class)
     {

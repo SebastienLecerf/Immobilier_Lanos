@@ -1,0 +1,64 @@
+{% extends '::base.html.twig' %}
+
+{% block body -%}
+    <h1>BudgetGest</h1>
+
+    <table class="record_properties">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ entity.id }}</td>
+            </tr>
+            <tr>
+                <th>Nomenclature</th>
+                <td>{{ entity.nomenclature }}</td>
+            </tr>
+            <tr>
+                <th>Ratio</th>
+                <td>{{ entity.ratio }}</td>
+            </tr>
+            <tr>
+                <th>Assiette</th>
+                <td>{{ entity.assiette }}</td>
+            </tr>
+            <tr>
+                <th>Budgetht</th>
+                <td>{{ entity.budgetHt }}</td>
+            </tr>
+            <tr>
+                <th>Montanttva</th>
+                <td>{{ entity.montantTva }}</td>
+            </tr>
+            <tr>
+                <th>Budgetttc</th>
+                <td>{{ entity.budgetTtc }}</td>
+            </tr>
+            <tr>
+                <th>Poste</th>
+                <td>{{ entity.poste }}</td>
+            </tr>
+            <tr>
+                <th>Ouvrage</th>
+                <td>{{ entity.ouvrage }}</td>
+            </tr>
+            <tr>
+                <th>Type</th>
+                <td>{{ entity.type }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+        <ul class="record_actions">
+    <li>
+        <a href="{{ path('budgetgest') }}">
+            Back to the list
+        </a>
+    </li>
+    <li>
+        <a href="{{ path('budgetgest_edit', { 'id': entity.id }) }}">
+            Edit
+        </a>
+    </li>
+    <li>{{ form(delete_form) }}</li>
+</ul>
+{% endblock %}

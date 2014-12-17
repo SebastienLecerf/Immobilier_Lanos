@@ -28,7 +28,7 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function guessType($class, $property)
     {
@@ -40,7 +40,7 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function guessRequired($class, $property)
     {
@@ -54,7 +54,7 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function guessMaxLength($class, $property)
     {
@@ -66,7 +66,7 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function guessPattern($class, $property)
     {
@@ -159,8 +159,6 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
             case 'Symfony\Component\Validator\Constraints\False':
                 return new TypeGuess('checkbox', array(), Guess::MEDIUM_CONFIDENCE);
         }
-
-        return null;
     }
 
     /**
@@ -178,8 +176,6 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
             case 'Symfony\Component\Validator\Constraints\True':
                 return new ValueGuess(true, Guess::HIGH_CONFIDENCE);
         }
-
-        return null;
     }
 
     /**
@@ -200,7 +196,7 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
 
             case 'Symfony\Component\Validator\Constraints\Type':
                 if (in_array($constraint->type, array('double', 'float', 'numeric', 'real'))) {
-                        return new ValueGuess(null, Guess::MEDIUM_CONFIDENCE);
+                    return new ValueGuess(null, Guess::MEDIUM_CONFIDENCE);
                 }
                 break;
 
@@ -210,8 +206,6 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
                 }
                 break;
         }
-
-        return null;
     }
 
     /**
@@ -250,8 +244,6 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
                 }
                 break;
         }
-
-        return null;
     }
 
     /**
@@ -284,10 +276,10 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
                     }
                 }
             }
+        }
 
-            if (null !== $defaultValue) {
-                $guesses[] = new ValueGuess($defaultValue, Guess::LOW_CONFIDENCE);
-            }
+        if (null !== $defaultValue) {
+            $guesses[] = new ValueGuess($defaultValue, Guess::LOW_CONFIDENCE);
         }
 
         return Guess::getBestGuess($guesses);

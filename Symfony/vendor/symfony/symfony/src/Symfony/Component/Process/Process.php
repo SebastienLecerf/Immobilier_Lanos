@@ -52,7 +52,7 @@ class Process
     private $processInformation;
     private $stdout;
     private $stderr;
-    private $enhanceWindowsCompatibility;
+    private $enhanceWindowsCompatibility = true;
     private $enhanceSigchildCompatibility;
     private $process;
     private $status = self::STATUS_READY;
@@ -63,6 +63,8 @@ class Process
     private $useFileHandles = false;
     /** @var ProcessPipes */
     private $processPipes;
+
+    private $latestSignal;
 
     private static $sigchild;
 
@@ -119,12 +121,12 @@ class Process
     /**
      * Constructor.
      *
-     * @param string             $commandline The command line to run
-     * @param string|null        $cwd         The working directory or null to use the working dir of the current PHP process
-     * @param array|null         $env         The environment variables or null to inherit
-     * @param string|null        $stdin       The STDIN content
-     * @param integer|float|null $timeout     The timeout in seconds or null to disable
-     * @param array              $options     An array of options for proc_open
+     * @param string         $commandline The command line to run
+     * @param string|null    $cwd         The working directory or null to use the working dir of the current PHP process
+     * @param array|null     $env         The environment variables or null to inherit
+     * @param string|null    $stdin       The STDIN content
+     * @param int|float|null $timeout     The timeout in seconds or null to disable
+     * @param array          $options     An array of options for proc_open
      *
      * @throws RuntimeException When proc_open is not installed
      *
@@ -143,19 +145,16 @@ class Process
         // on Gnu/Linux, PHP builds with --enable-maintainer-zts are also affected
         // @see : https://bugs.php.net/bug.php?id=51800
         // @see : https://bugs.php.net/bug.php?id=50524
-
         if (null === $this->cwd && (defined('ZEND_THREAD_SAFE') || defined('PHP_WINDOWS_VERSION_BUILD'))) {
             $this->cwd = getcwd();
         }
         if (null !== $env) {
             $this->setEnv($env);
-        } else {
-            $this->env = null;
         }
+
         $this->stdin = $stdin;
         $this->setTimeout($timeout);
         $this->useFileHandles = defined('PHP_WINDOWS_VERSION_BUILD');
-        $this->enhanceWindowsCompatibility = true;
         $this->enhanceSigchildCompatibility = !defined('PHP_WINDOWS_VERSION_BUILD') && $this->isSigchildEnabled();
         $this->options = array_replace(array('suppress_errors' => true, 'binary_pipes' => true), $options);
     }
@@ -184,7 +183,7 @@ class Process
      * @param callback|null $callback A PHP callback to run whenever there is some
      *                                output available on STDOUT or STDERR
      *
-     * @return integer The exit status code
+     * @return int The exit status code
      *
      * @throws RuntimeException When process can't be launched
      * @throws RuntimeException When process stopped after receiving signal
@@ -233,10 +232,11 @@ class Process
         $commandline = $this->commandline;
 
         if (defined('PHP_WINDOWS_VERSION_BUILD') && $this->enhanceWindowsCompatibility) {
-            $commandline = 'cmd /V:ON /E:ON /C "('.$commandline.')"';
+            $commandline = 'cmd /V:ON /E:ON /C "('.$commandline.')';
             foreach ($this->processPipes->getFiles() as $offset => $filename) {
-                $commandline .= ' '.$offset.'>'.$filename;
+                $commandline .= ' '.$offset.'>'.ProcessUtils::escapeArgument($filename);
             }
+            $commandline .= '"';
 
             if (!isset($this->options['bypass_shell'])) {
                 $this->options['bypass_shell'] = true;
@@ -297,7 +297,7 @@ class Process
      *
      * @param callback|null $callback A valid PHP callback
      *
-     * @return integer The exitcode of the process
+     * @return int The exitcode of the process
      *
      * @throws RuntimeException When process timed out
      * @throws RuntimeException When process stopped after receiving signal
@@ -315,7 +315,7 @@ class Process
         do {
             $this->checkTimeout();
             $running = defined('PHP_WINDOWS_VERSION_BUILD') ? $this->isRunning() : $this->processPipes->hasOpenHandles();
-            $close = !defined('PHP_WINDOWS_VERSION_BUILD') || !$running;;
+            $close = !defined('PHP_WINDOWS_VERSION_BUILD') || !$running;
             $this->readPipes(true, $close);
         } while ($running);
 
@@ -323,7 +323,7 @@ class Process
             usleep(1000);
         }
 
-        if ($this->processInformation['signaled']) {
+        if ($this->processInformation['signaled'] && $this->processInformation['termsig'] !== $this->latestSignal) {
             throw new RuntimeException(sprintf('The process has been signaled with signal "%s".', $this->processInformation['termsig']));
         }
 
@@ -333,7 +333,7 @@ class Process
     /**
      * Returns the Pid (process identifier), if applicable.
      *
-     * @return integer|null The process id if running, null otherwise
+     * @return int|null The process id if running, null otherwise
      *
      * @throws RuntimeException In case --enable-sigchild is activated
      */
@@ -351,7 +351,7 @@ class Process
     /**
      * Sends a POSIX signal to the process.
      *
-     * @param  integer $signal A valid POSIX signal (see http://www.php.net/manual/en/pcntl.constants.php)
+     * @param int $signal A valid POSIX signal (see http://www.php.net/manual/en/pcntl.constants.php)
      *
      * @return Process
      *
@@ -450,7 +450,7 @@ class Process
     /**
      * Returns the exit code returned by the process.
      *
-     * @return null|integer The exit status code, null if the Process is not terminated
+     * @return null|int The exit status code, null if the Process is not terminated
      *
      * @throws RuntimeException In case --enable-sigchild is activated and the sigchild compatibility mode is disabled
      *
@@ -492,7 +492,7 @@ class Process
     /**
      * Checks if the process ended successfully.
      *
-     * @return Boolean true if the process ended successfully, false otherwise
+     * @return bool true if the process ended successfully, false otherwise
      *
      * @api
      */
@@ -506,7 +506,7 @@ class Process
      *
      * It always returns false on Windows.
      *
-     * @return Boolean
+     * @return bool
      *
      * @throws RuntimeException In case --enable-sigchild is activated
      * @throws LogicException   In case the process is not terminated
@@ -531,7 +531,7 @@ class Process
      *
      * It is only meaningful if hasBeenSignaled() returns true.
      *
-     * @return integer
+     * @return int
      *
      * @throws RuntimeException In case --enable-sigchild is activated
      * @throws LogicException   In case the process is not terminated
@@ -556,7 +556,7 @@ class Process
      *
      * It always returns false on Windows.
      *
-     * @return Boolean
+     * @return bool
      *
      * @throws LogicException In case the process is not terminated
      *
@@ -576,7 +576,7 @@ class Process
      *
      * It is only meaningful if hasBeenStopped() returns true.
      *
-     * @return integer
+     * @return int
      *
      * @throws LogicException In case the process is not terminated
      *
@@ -594,7 +594,7 @@ class Process
     /**
      * Checks if the process is currently running.
      *
-     * @return Boolean true if the process is currently running, false otherwise
+     * @return bool true if the process is currently running, false otherwise
      */
     public function isRunning()
     {
@@ -610,7 +610,7 @@ class Process
     /**
      * Checks if the process has been started with no regard to the current state.
      *
-     * @return Boolean true if status is ready, false otherwise
+     * @return bool true if status is ready, false otherwise
      */
     public function isStarted()
     {
@@ -620,7 +620,7 @@ class Process
     /**
      * Checks if the process is terminated.
      *
-     * @return Boolean true if process is terminated, false otherwise
+     * @return bool true if process is terminated, false otherwise
      */
     public function isTerminated()
     {
@@ -646,10 +646,10 @@ class Process
     /**
      * Stops the process.
      *
-     * @param integer|float $timeout The timeout in seconds
-     * @param integer       $signal  A POSIX signal to send in case the process has not stop at timeout, default is SIGKILL
+     * @param int|float $timeout The timeout in seconds
+     * @param int       $signal  A POSIX signal to send in case the process has not stop at timeout, default is SIGKILL
      *
-     * @return integer The exit-code of the process
+     * @return int The exit-code of the process
      *
      * @throws RuntimeException if the process got signaled
      */
@@ -663,7 +663,8 @@ class Process
                     throw new RuntimeException('Unable to kill the process');
                 }
             }
-            proc_terminate($this->process);
+            // given `SIGTERM` may not be defined and that `proc_terminate` uses the constant value and not the constant itself, we use the same here
+            $this->doSignal(15, false);
             do {
                 usleep(1000);
             } while ($this->isRunning() && microtime(true) < $timeoutMicro);
@@ -746,7 +747,7 @@ class Process
      *
      * To disable the timeout, set this value to null.
      *
-     * @param integer|float|null $timeout The timeout in seconds
+     * @param int|float|null $timeout The timeout in seconds
      *
      * @return self The current Process instance
      *
@@ -770,13 +771,19 @@ class Process
     /**
      * Enables or disables the TTY mode.
      *
-     * @param boolean $tty True to enabled and false to disable
+     * @param bool $tty True to enabled and false to disable
      *
      * @return self The current Process instance
+     *
+     * @throws RuntimeException In case the TTY mode is not supported
      */
     public function setTty($tty)
     {
-        $this->tty = (Boolean) $tty;
+        if (defined('PHP_WINDOWS_VERSION_BUILD') && $tty) {
+            throw new RuntimeException('TTY mode is not supported on Windows platform.');
+        }
+
+        $this->tty = (bool) $tty;
 
         return $this;
     }
@@ -784,7 +791,7 @@ class Process
     /**
      * Checks if the TTY mode is enabled.
      *
-     * @return Boolean true if the TTY mode is enabled, false otherwise
+     * @return bool true if the TTY mode is enabled, false otherwise
      */
     public function isTty()
     {
@@ -875,10 +882,17 @@ class Process
      * @param string|null $stdin The new contents
      *
      * @return self The current Process instance
+     *
+     * @throws LogicException           In case the process is running
+     * @throws InvalidArgumentException In case the argument is invalid
      */
     public function setStdin($stdin)
     {
-        $this->stdin = $stdin;
+        if ($this->isRunning()) {
+            throw new LogicException('STDIN can not be set while the process is running.');
+        }
+
+        $this->stdin = ProcessUtils::validateInput(sprintf('%s::%s', __CLASS__, __FUNCTION__), $stdin);
 
         return $this;
     }
@@ -912,7 +926,7 @@ class Process
      *
      * This is true by default.
      *
-     * @return Boolean
+     * @return bool
      */
     public function getEnhanceWindowsCompatibility()
     {
@@ -922,13 +936,13 @@ class Process
     /**
      * Sets whether or not Windows compatibility is enabled.
      *
-     * @param Boolean $enhance
+     * @param bool $enhance
      *
      * @return self The current Process instance
      */
     public function setEnhanceWindowsCompatibility($enhance)
     {
-        $this->enhanceWindowsCompatibility = (Boolean) $enhance;
+        $this->enhanceWindowsCompatibility = (bool) $enhance;
 
         return $this;
     }
@@ -936,7 +950,7 @@ class Process
     /**
      * Returns whether sigchild compatibility mode is activated or not.
      *
-     * @return Boolean
+     * @return bool
      */
     public function getEnhanceSigchildCompatibility()
     {
@@ -950,13 +964,13 @@ class Process
      * determine the success of a process when PHP has been compiled with
      * the --enable-sigchild option
      *
-     * @param Boolean $enhance
+     * @param bool $enhance
      *
      * @return self The current Process instance
      */
     public function setEnhanceSigchildCompatibility($enhance)
     {
-        $this->enhanceSigchildCompatibility = (Boolean) $enhance;
+        $this->enhanceSigchildCompatibility = (bool) $enhance;
 
         return $this;
     }
@@ -1035,7 +1049,7 @@ class Process
     /**
      * Updates the status of the process, reads pipes.
      *
-     * @param Boolean $blocking Whether to use a blocking read call.
+     * @param bool $blocking Whether to use a blocking read call.
      */
     protected function updateStatus($blocking)
     {
@@ -1056,7 +1070,7 @@ class Process
     /**
      * Returns whether PHP has been compiled with the '--enable-sigchild' option or not.
      *
-     * @return Boolean
+     * @return bool
      */
     protected function isSigchildEnabled()
     {
@@ -1077,8 +1091,8 @@ class Process
     /**
      * Reads pipes, executes callback.
      *
-     * @param Boolean $blocking Whether to use blocking calls or not.
-     * @param Boolean $close    Whether to close file handles or not.
+     * @param bool $blocking Whether to use blocking calls or not.
+     * @param bool $close    Whether to close file handles or not.
      */
     private function readPipes($blocking, $close)
     {
@@ -1110,7 +1124,7 @@ class Process
     /**
      * Closes process resource, closes file handles, sets the exitcode.
      *
-     * @return Integer The exitcode
+     * @return int The exitcode
      */
     private function close()
     {
@@ -1147,6 +1161,7 @@ class Process
         $this->stdout = null;
         $this->stderr = null;
         $this->process = null;
+        $this->latestSignal = null;
         $this->status = self::STATUS_READY;
         $this->incrementalOutputOffset = 0;
         $this->incrementalErrorOutputOffset = 0;
@@ -1155,10 +1170,10 @@ class Process
     /**
      * Sends a POSIX signal to the process.
      *
-     * @param  integer $signal         A valid POSIX signal (see http://www.php.net/manual/en/pcntl.constants.php)
-     * @param  Boolean $throwException Whether to throw exception in case signal failed
+     * @param int  $signal         A valid POSIX signal (see http://www.php.net/manual/en/pcntl.constants.php)
+     * @param bool $throwException Whether to throw exception in case signal failed
      *
-     * @return Boolean True if the signal was sent successfully, false otherwise
+     * @return bool True if the signal was sent successfully, false otherwise
      *
      * @throws LogicException   In case the process is not running
      * @throws RuntimeException In case --enable-sigchild is activated
@@ -1190,13 +1205,15 @@ class Process
             return false;
         }
 
+        $this->latestSignal = $signal;
+
         return true;
     }
 
     /**
      * Ensures the process is running or terminated, throws a LogicException if the process has a not started.
      *
-     * @param $functionName The function name that was called.
+     * @param string $functionName The function name that was called.
      *
      * @throws LogicException If the process has not run.
      */
@@ -1210,7 +1227,7 @@ class Process
     /**
      * Ensures the process is terminated, throws a LogicException if the process has a status different than `terminated`.
      *
-     * @param $functionName The function name that was called.
+     * @param string $functionName The function name that was called.
      *
      * @throws LogicException If the process is not yet terminated.
      */

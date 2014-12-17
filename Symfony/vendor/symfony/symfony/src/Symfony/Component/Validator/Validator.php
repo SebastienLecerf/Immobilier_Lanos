@@ -54,8 +54,7 @@ class Validator implements ValidatorInterface
         TranslatorInterface $translator,
         $translationDomain = 'validators',
         array $objectInitializers = array()
-    )
-    {
+    ) {
         $this->metadataFactory = $metadataFactory;
         $this->validatorFactory = $validatorFactory;
         $this->translator = $translator;
@@ -72,7 +71,7 @@ class Validator implements ValidatorInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getMetadataFor($value)
     {
@@ -80,7 +79,7 @@ class Validator implements ValidatorInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function validate($value, $groups = null, $traverse = false, $deep = false)
     {
@@ -94,7 +93,7 @@ class Validator implements ValidatorInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      *
      * @throws ValidatorException If the metadata for the value does not support properties.
      */
@@ -125,7 +124,7 @@ class Validator implements ValidatorInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      *
      * @throws ValidatorException If the metadata for the value does not support properties.
      */
@@ -156,7 +155,7 @@ class Validator implements ValidatorInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function validateValue($value, $constraints, $groups = null)
     {

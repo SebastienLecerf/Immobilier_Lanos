@@ -30,7 +30,7 @@ class NotIdenticalToValidatorTest extends AbstractComparisonValidatorTestCase
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function provideValidComparisons()
     {
@@ -45,16 +45,18 @@ class NotIdenticalToValidatorTest extends AbstractComparisonValidatorTestCase
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function provideInvalidComparisons()
     {
         $date = new \DateTime('2000-01-01');
+        $object = new ComparisonTest_Class(2);
 
         return array(
-            array(3, 3, '3', 'integer'),
-            array('a', 'a', "'a'", 'string'),
-            array($date, $date, '2000-01-01 00:00:00', 'DateTime')
+            array(3, '3', 3, '3', 'integer'),
+            array('a', '"a"', 'a', '"a"', 'string'),
+            array($date, 'Jan 1, 2000, 12:00 AM', $date, 'Jan 1, 2000, 12:00 AM', 'DateTime'),
+            array($object, '2', $object, '2', __NAMESPACE__.'\ComparisonTest_Class'),
         );
     }
 }

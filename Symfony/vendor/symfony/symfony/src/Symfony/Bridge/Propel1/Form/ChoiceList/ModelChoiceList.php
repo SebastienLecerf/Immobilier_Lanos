@@ -14,7 +14,6 @@ namespace Symfony\Bridge\Propel1\Form\ChoiceList;
 use \ModelCriteria;
 use \BaseObject;
 use \Persistent;
-
 use Symfony\Component\Form\Exception\StringCastException;
 use Symfony\Component\Form\Extension\Core\ChoiceList\ObjectChoiceList;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
@@ -55,14 +54,14 @@ class ModelChoiceList extends ObjectChoiceList
     /**
      * Whether the model objects have already been loaded.
      *
-     * @var Boolean
+     * @var bool
      */
     protected $loaded = false;
 
     /**
      * Whether to use the identifier for index generation.
      *
-     * @var Boolean
+     * @var bool
      */
     private $identifierAsIndex = false;
 
@@ -71,21 +70,24 @@ class ModelChoiceList extends ObjectChoiceList
      *
      * @see \Symfony\Bridge\Propel1\Form\Type\ModelType How to use the preferred choices.
      *
-     * @param string                   $class             The FQCN of the model class to be loaded.
-     * @param string                   $labelPath         A property path pointing to the property used for the choice labels.
-     * @param array                    $choices           An optional array to use, rather than fetching the models.
-     * @param ModelCriteria            $queryObject       The query to use retrieving model data from database.
-     * @param string                   $groupPath         A property path pointing to the property used to group the choices.
-     * @param array|ModelCriteria      $preferred         The preferred items of this choice.
+     * @param string                    $class            The FQCN of the model class to be loaded.
+     * @param string                    $labelPath        A property path pointing to the property used for the choice labels.
+     * @param array                     $choices          An optional array to use, rather than fetching the models.
+     * @param ModelCriteria             $queryObject      The query to use retrieving model data from database.
+     * @param string                    $groupPath        A property path pointing to the property used to group the choices.
+     * @param array|ModelCriteria       $preferred        The preferred items of this choice.
      *                                                    Either an array if $choices is given,
      *                                                    or a ModelCriteria to be merged with the $queryObject.
      * @param PropertyAccessorInterface $propertyAccessor The reflection graph for reading property paths.
+     *
+     * @throws MissingOptionsException when no model class is given
+     * @throws InvalidOptionsException when the model class cannot be found
      */
     public function __construct($class, $labelPath = null, $choices = null, $queryObject = null, $groupPath = null, $preferred = array(), PropertyAccessorInterface $propertyAccessor = null)
     {
-        $this->class        = $class;
+        $this->class = $class;
 
-        $queryClass         = $this->class.'Query';
+        $queryClass = $this->class.'Query';
         if (!class_exists($queryClass)) {
             if (empty($this->class)) {
                 throw new MissingOptionsException('The "class" parameter is empty, you should provide the model class');
@@ -93,11 +95,11 @@ class ModelChoiceList extends ObjectChoiceList
             throw new InvalidOptionsException(sprintf('The query class "%s" is not found, you should provide the FQCN of the model class', $queryClass));
         }
 
-        $query              = new $queryClass();
+        $query = new $queryClass();
 
-        $this->query        = $queryObject ?: $query;
-        $this->identifier   = $this->query->getTableMap()->getPrimaryKeys();
-        $this->loaded       = is_array($choices) || $choices instanceof \Traversable;
+        $this->query = $queryObject ?: $query;
+        $this->identifier = $this->query->getTableMap()->getPrimaryKeys();
+        $this->loaded = is_array($choices) || $choices instanceof \Traversable;
 
         if ($preferred instanceof ModelCriteria) {
             $this->preferredQuery = $preferred->mergeWith($this->query);
@@ -356,8 +358,8 @@ class ModelChoiceList extends ObjectChoiceList
      *
      * @param mixed $model The choice to create an index for
      *
-     * @return integer|string A unique index containing only ASCII letters,
-     *                        digits and underscores.
+     * @return int|string A unique index containing only ASCII letters,
+     *                    digits and underscores.
      */
     protected function createIndex($model)
     {
@@ -377,7 +379,7 @@ class ModelChoiceList extends ObjectChoiceList
      *
      * @param mixed $model The choice to create a value for
      *
-     * @return integer|string A unique value without character limitations.
+     * @return int|string A unique value without character limitations.
      */
     protected function createValue($model)
     {
@@ -454,7 +456,7 @@ class ModelChoiceList extends ObjectChoiceList
      *
      * @param \ColumnMap $column
      *
-     * @return Boolean
+     * @return bool
      */
     private function isScalar(\ColumnMap $column)
     {
@@ -471,7 +473,7 @@ class ModelChoiceList extends ObjectChoiceList
      * @param mixed $choice
      * @param mixed $givenChoice
      *
-     * @return Boolean
+     * @return bool
      */
     private function isEqual($choice, $givenChoice)
     {

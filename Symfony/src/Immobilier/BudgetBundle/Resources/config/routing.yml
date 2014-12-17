@@ -1,0 +1,11 @@
+immobilier_budget_homepage:
+    path:     /hello/{name}
+    defaults: { _controller: ImmobilierBudgetBundle:Default:index }
+
+immobilier_budget_traitement:
+    path:     /traitement/
+    defaults: { _controller: ImmobilierBudgetBundle:BudgetGest:index }
+
+budgetgest_create:
+    path:     /budgetgest_new/
+    defaults: { _controller: ImmobilierBudgetBundle:BudgetGest:create }

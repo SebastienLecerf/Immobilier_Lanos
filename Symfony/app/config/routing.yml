@@ -1,0 +1,4 @@
+immobilier_budget:
+    resource: "@ImmobilierBudgetBundle/Resources/config/routing.yml"
+    prefix:   /
+

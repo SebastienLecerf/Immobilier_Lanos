@@ -27,19 +27,19 @@ class ErrorHandler
     const TYPE_DEPRECATION = -100;
 
     private $levels = array(
-        E_WARNING           => 'Warning',
-        E_NOTICE            => 'Notice',
-        E_USER_ERROR        => 'User Error',
-        E_USER_WARNING      => 'User Warning',
-        E_USER_NOTICE       => 'User Notice',
-        E_STRICT            => 'Runtime Notice',
+        E_WARNING => 'Warning',
+        E_NOTICE => 'Notice',
+        E_USER_ERROR => 'User Error',
+        E_USER_WARNING => 'User Warning',
+        E_USER_NOTICE => 'User Notice',
+        E_STRICT => 'Runtime Notice',
         E_RECOVERABLE_ERROR => 'Catchable Fatal Error',
-        E_DEPRECATED        => 'Deprecated',
-        E_USER_DEPRECATED   => 'User Deprecated',
-        E_ERROR             => 'Error',
-        E_CORE_ERROR        => 'Core Error',
-        E_COMPILE_ERROR     => 'Compile Error',
-        E_PARSE             => 'Parse',
+        E_DEPRECATED => 'Deprecated',
+        E_USER_DEPRECATED => 'User Deprecated',
+        E_ERROR => 'Error',
+        E_CORE_ERROR => 'Core Error',
+        E_COMPILE_ERROR => 'Compile Error',
+        E_PARSE => 'Parse',
     );
 
     private $level;
@@ -56,8 +56,8 @@ class ErrorHandler
     /**
      * Registers the error handler.
      *
-     * @param integer $level The level at which the conversion to Exception is done (null to use the error_reporting() value and 0 to disable)
-     * @param Boolean $displayErrors Display errors (for dev environment) or just log they (production usage)
+     * @param int  $level         The level at which the conversion to Exception is done (null to use the error_reporting() value and 0 to disable)
+     * @param bool $displayErrors Display errors (for dev environment) or just log they (production usage)
      *
      * @return ErrorHandler The registered error handler
      */
@@ -101,7 +101,7 @@ class ErrorHandler
 
         if ($level & (E_USER_DEPRECATED | E_DEPRECATED)) {
             if (isset(self::$loggers['deprecation'])) {
-                if (version_compare(PHP_VERSION, '5.4', '<')) {
+                if (PHP_VERSION_ID < 50400) {
                     $stack = array_map(
                         function ($row) {
                             unset($row['args']);
@@ -124,6 +124,13 @@ class ErrorHandler
             // make sure the ContextErrorException class is loaded (https://bugs.php.net/bug.php?id=65322)
             if (!class_exists('Symfony\Component\Debug\Exception\ContextErrorException')) {
                 require __DIR__.'/Exception/ContextErrorException.php';
+            }
+            if (!class_exists('Symfony\Component\Debug\Exception\FlattenException')) {
+                require __DIR__.'/Exception/FlattenException.php';
+            }
+
+            if (PHP_VERSION_ID < 50400 && isset($context['GLOBALS']) && is_array($context)) {
+                unset($context['GLOBALS']);
             }
 
             $exception = new ContextErrorException(sprintf('%s: %s in %s line %d', isset($this->levels[$level]) ? $this->levels[$level] : $level, $message, $file, $line), 0, $level, $file, $line, $context);
